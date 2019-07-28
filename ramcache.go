@@ -4,14 +4,15 @@ package main
 
 import (
 	"errors"
+	log "github.com/Sirupsen/logrus"
 	"sync"
 )
 
 /* Контейнер */
 type MemoryCache struct {
-	sync.RWMutex                           // Защитный мьютекс
+	sync.RWMutex                           // Защитный мьютекс для потокобезопасности map
 	elements     map[string]*MemoryElement // Кешируемые элементы
-
+	maxSize      int                       // Максимальный размер кеша
 }
 
 /* Кешируемый элемент */
@@ -21,9 +22,14 @@ type MemoryElement struct {
 	// (может использовать TreeMap???	  // import "github.com/golang-collections/tree/treemap"
 }
 
-/* Создать новый кеш в памяти */
+/* Создать новый кеш в памяти без ограничения размера */
 func CreateMemoryCache() Cache {
-	return &MemoryCache{elements: make(map[string]*MemoryElement)}
+	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: -1}
+}
+
+/* Создать новый кеш в памяти заданного размера */
+func CreateSpecifySizeMemoryCache(size int) Cache {
+	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: size}
 }
 
 /***************************************/
@@ -35,6 +41,20 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 	// Блокировать на время записи
 	mc.Lock()
 	defer mc.Unlock()
+
+	// Проверить не заполнен ли кеш полностью
+	if mc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
+		elementsNumber := len(mc.elements)
+		log.Infof("Количество элементов в кеше: %d", elementsNumber)
+		log.Infof("Максимальный размер кеша: %d", mc.maxSize)
+		if elementsNumber >= mc.maxSize {
+
+			// Передвигать всё на диск	// TODO
+
+			log.Infoln("Кеш полностью заполнет, ничего не добавляем!")
+			return errors.New("кеш полностью заполнет, ничего не добавляем")
+		}
+	}
 
 	mc.elements[key] = &MemoryElement{
 		value:     value,

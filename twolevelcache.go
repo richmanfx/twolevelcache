@@ -22,23 +22,35 @@ func main() {
 	SetLog(log.InfoLevel)
 
 	// Заполнить слайс данными
-	dataSize := 5
+	dataSize := 10
 	cachedData := make([]SimpleStructure, 0, dataSize)
 	dataFill(&cachedData)
 	log.Debugf("Данные: %+v", cachedData)
 
-	// Инициализировать кеш с нулевым размером TODO: пока без размера
-	cache := CreateMemoryCache()
+	// Инициализировать кеш с нулевым размером
+	//cache := CreateMemoryCache()
+	cache := CreateSpecifySizeMemoryCache(0)
+
 	log.Infof("Кеш: %+v", cache)
 
 	// Закешировать значение
-	hash := getHash(cachedData[0])
+	data := cachedData[0]
+	hash := getHash(data)
 	log.Infof("Хеш: %+v", hash)
-	err := cache.Put(hash, cachedData[0])
+	err := cache.Put(hash, data)
 	if err != nil {
 		log.Errorf("Ошибка хеширования")
 	}
+	log.Infof("Кеш: %+v", cache)
 
+	// Закешировать значение
+	data = cachedData[1]
+	hash = getHash(data)
+	log.Infof("Хеш: %+v", hash)
+	err = cache.Put(hash, data)
+	if err != nil {
+		log.Errorf("Ошибка хеширования")
+	}
 	log.Infof("Кеш: %+v", cache)
 
 }
