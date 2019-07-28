@@ -19,8 +19,8 @@ func TestZeroCacheSize(t *testing.T) {
 	dataFill(&testData)
 	log.Infof("Данные: %+v", testData)
 
-	// Инициализировать кеш с нулевым размером TODO: пока без размера
-	cache := CreateMemoryCache()
+	// Инициализировать кеш с нулевым размером
+	cache := CreateSpecifySizeMemoryCache(0)
 	log.Infof("Кеш: %+v", cache)
 
 	// TODO: Пока оставил тестирование - не работает дебаг в Goland-е, отдельным приложением тестирую
