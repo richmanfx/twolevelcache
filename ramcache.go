@@ -19,7 +19,8 @@ type MemoryCache struct {
 type MemoryElement struct {
 	value     interface{} // Кешируемое значение
 	frequency int         // Частота использования элемента
-	// (может использовать TreeMap???	  // import "github.com/golang-collections/tree/treemap"
+	// (может использовать TreeMap???
+	// import "github.com/golang-collections/tree/treemap"
 }
 
 /* Создать новый кеш в памяти без ограничения размера */
@@ -44,10 +45,9 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 
 	// Проверить не заполнен ли кеш полностью
 	if mc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
-		elementsNumber := len(mc.elements)
-		log.Infof("Количество элементов в кеше: %d", elementsNumber)
+		log.Infof("Количество элементов в кеше: %d", mc.Size())
 		log.Infof("Максимальный размер кеша: %d", mc.maxSize)
-		if elementsNumber >= mc.maxSize {
+		if mc.Size() >= mc.maxSize {
 
 			// Передвигать всё на диск	// TODO
 
@@ -60,11 +60,14 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 		value:     value,
 		frequency: 1, // Помещаем в кеш - значит используется в первый раз
 	}
+
 	return nil
 }
 
 /* Get */
 func (mc *MemoryCache) Get(key string) interface{} {
+
+	var result interface{}
 
 	// Блокировать запись на время чтения
 	mc.RLock()
@@ -74,14 +77,18 @@ func (mc *MemoryCache) Get(key string) interface{} {
 	el, ok := mc.elements[key]
 	if ok {
 		el.frequency++ // Частота использования
-		return el.value
+		result = el.value
 	} else {
-		return nil
+		result = nil
 	}
+
+	return result
 }
 
 /* Del */
 func (mc *MemoryCache) Del(key string) error {
+
+	var result error
 
 	// Блокировать на время записи
 	mc.Lock()
@@ -89,21 +96,23 @@ func (mc *MemoryCache) Del(key string) error {
 
 	_, ok := mc.elements[key]
 	if !ok {
-		return errors.New("удаление значения: ключ не существует")
-	}
-
-	delete(mc.elements, key)
-	_, ok = mc.elements[key]
-	if ok {
-		return errors.New("ошибка при удалении значения")
+		result = errors.New("удаление значения: ключ не существует")
 	} else {
-		return nil
+		delete(mc.elements, key)
+		_, ok = mc.elements[key]
+		if ok {
+			result = errors.New("ошибка при удалении значения")
+		} else {
+			result = nil
+		}
 	}
-
+	return result
 }
 
 /* IsExist */
 func (mc *MemoryCache) IsExist(key string) bool {
+
+	var result bool
 
 	// Блокировать запись на время чтения
 	mc.RLock()
@@ -111,8 +120,17 @@ func (mc *MemoryCache) IsExist(key string) bool {
 
 	_, ok := mc.elements[key]
 	if ok {
-		return true
+		result = true
 	} else {
-		return false
+		result = false
 	}
+
+	return result
+}
+
+/* Size */
+func (mc *MemoryCache) Size() int {
+	result := len(mc.elements)
+	log.Debugf("Количество элементов в кеше: %d", result)
+	return result
 }

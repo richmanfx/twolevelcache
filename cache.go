@@ -14,4 +14,7 @@ type Cache interface {
 
 	// Проверить существование значения в кеше
 	IsExist(key string) bool
+
+	// Размер заполнения кеша
+	Size() int
 }

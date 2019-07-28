@@ -39,7 +39,7 @@ func main() {
 	log.Infof("Хеш: %+v", hash)
 	err := cache.Put(hash, data)
 	if err != nil {
-		log.Errorf("Ошибка хеширования")
+		log.Infof("Ошибка добавления в кеш: %s", err)
 	}
 	log.Infof("Кеш: %+v", cache)
 
@@ -49,7 +49,7 @@ func main() {
 	log.Infof("Хеш: %+v", hash)
 	err = cache.Put(hash, data)
 	if err != nil {
-		log.Errorf("Ошибка хеширования")
+		log.Infof("Ошибка добавления в кеш: %s", err)
 	}
 	log.Infof("Кеш: %+v", cache)
 
@@ -59,7 +59,7 @@ func main() {
 func getHash(structure SimpleStructure) string {
 	hash, err := hashstructure.Hash(structure, nil)
 	if err != nil {
-		log.Errorf("Ошибка хеширования")
+		log.Errorf("Ошибка хеширования: %s", err)
 	}
 	return fmt.Sprintf("%d", hash)
 }
