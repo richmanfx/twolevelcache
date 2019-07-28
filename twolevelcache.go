@@ -1,23 +1,25 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/bxcodec/faker"
+	"github.com/mitchellh/hashstructure"
 	. "os"
 )
 
 /* Простая структура */
 type SimpleStructure struct {
-	Id		int
-	Weight	float32
-	Name	string		`faker:"first_name"`
-	Player	bool
+	Id     int
+	Weight float32
+	Name   string `faker:"first_name"`
+	Player bool
 }
 
 func main() {
 
 	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
-	SetLog(log.DebugLevel)
+	SetLog(log.InfoLevel)
 
 	// Заполнить слайс данными
 	dataSize := 5
@@ -25,6 +27,29 @@ func main() {
 	dataFill(&cachedData)
 	log.Debugf("Данные: %+v", cachedData)
 
+	// Инициализировать кеш с нулевым размером TODO: пока без размера
+	cache := CreateMemoryCache()
+	log.Infof("Кеш: %+v", cache)
+
+	// Закешировать значение
+	hash := getHash(cachedData[0])
+	log.Infof("Хеш: %+v", hash)
+	err := cache.Put(hash, cachedData[0])
+	if err != nil {
+		log.Errorf("Ошибка хеширования")
+	}
+
+	log.Infof("Кеш: %+v", cache)
+
+}
+
+/* Вернуть хеш структуры */
+func getHash(structure SimpleStructure) string {
+	hash, err := hashstructure.Hash(structure, nil)
+	if err != nil {
+		log.Errorf("Ошибка хеширования")
+	}
+	return fmt.Sprintf("%d", hash)
 }
 
 /* Заполнить слайс данными */

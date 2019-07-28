@@ -17,7 +17,8 @@ type MemoryCache struct {
 /* Кешируемый элемент */
 type MemoryElement struct {
 	value     interface{} // Кешируемое значение
-	frequency int         // Частота использорвания элемента
+	frequency int         // Частота использования элемента
+	// (может использовать TreeMap???	  // import "github.com/golang-collections/tree/treemap"
 }
 
 /* Создать новый кеш в памяти */
@@ -75,9 +76,10 @@ func (mc *MemoryCache) Del(key string) error {
 	_, ok = mc.elements[key]
 	if ok {
 		return errors.New("ошибка при удалении значения")
+	} else {
+		return nil
 	}
 
-	return nil
 }
 
 /* IsExist */
