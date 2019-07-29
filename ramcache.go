@@ -45,8 +45,8 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 
 	// Проверить не заполнен ли кеш полностью
 	if mc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
-		log.Infof("Количество элементов в кеше: %d", mc.Size())
-		log.Infof("Максимальный размер кеша: %d", mc.maxSize)
+		log.Debugf("Количество элементов в кеше: %d", mc.Size())
+		log.Debugf("Максимальный размер кеша: %d", mc.maxSize)
 		if mc.Size() >= mc.maxSize {
 
 			// Передвигать всё на диск	// TODO

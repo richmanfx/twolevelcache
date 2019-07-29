@@ -5,6 +5,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bxcodec/faker"
 	"github.com/mitchellh/hashstructure"
+	"math/rand"
 	. "os"
 	"time"
 )
@@ -22,43 +23,38 @@ func main() {
 	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
 	SetLog(log.InfoLevel)
 
-	// Заполнить слайс данными
-	dataSize := 10
-	cachedData := make([]SimpleStructure, 0, dataSize)
-	dataFill(&cachedData)
+	// Сгенерировать фейковые данные
+	dataAmount := 100                                    // Количество данных
+	cachedData := make([]SimpleStructure, 0, dataAmount) // Слайс для данных
+	dataFill(&cachedData)                                // Заполнение данными
 	log.Debugf("Данные: %+v", cachedData)
 
-	// Инициализировать кеш с нулевым размером
-	cache := CreateSpecifySizeMemoryCache(1)
+	// Инициализировать кеш заданного размера
+	cacheSize := 95
+	cache := CreateSpecifySizeMemoryCache(cacheSize)
 
-	// Получить данные
-	data := cachedData[0]
+	// Запросить рандомные данные заданное количество раз с использование кеша
+	requestAmount := 1000                     // Количество запросов
+	rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
+	graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < requestAmount; i++ {
+
+		// Случайные данные
+		randomIndex := rand.Int() % len(cachedData)
+		data := cachedData[randomIndex]
+
+		// Получить данные, засечь время получения
 		startTime := time.Now().UnixNano()
 		findings := getData(cache, data)
-		log.Infof("Полученные данные: %v за время(наносекунды): '%v'", findings, time.Now().UnixNano()-startTime)
+		finishTime := time.Now().UnixNano()
+		receiptTime := finishTime - startTime
+		log.Infof("Полученные данные: %v за время(наносекунды): '%v'", findings, receiptTime)
+		graphicalAnalysisData = append(graphicalAnalysisData, receiptTime) // Добавить для графического анализа
 	}
 
-	//// Закешировать значение
-	//data = cachedData[0]
-	//hash := getHash(data)
-	//log.Infof("Хеш: %+v", hash)
-	//err := cache.Put(hash, data)
-	//if err != nil {
-	//	log.Infof("Ошибка добавления в кеш: %s", err)
-	//}
-	//log.Infof("Кеш: %+v", cache)
-	//
-	//// Закешировать значение
-	//data = cachedData[1]
-	//hash = getHash(data)
-	//log.Infof("Хеш: %+v", hash)
-	//err = cache.Put(hash, data)
-	//if err != nil {
-	//	log.Infof("Ошибка добавления в кеш: %s", err)
-	//}
-	//log.Infof("Кеш: %+v", cache)
+	// Вывести график задержек в файл
+	dataPlotting(graphicalAnalysisData, cacheSize, dataAmount, requestAmount)
 
 }
 
@@ -70,7 +66,7 @@ func getData(cache Cache, data SimpleStructure) interface{} {
 		return cache.Get(key)
 	} else {
 		// Эмуляция получения данных не из кеша - задержка
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(500 * time.Microsecond)
 		err := cache.Put(key, data) // Занести в кеш
 		if err != nil {
 			log.Infof("Ошибка добавления в кеш: %s", err)
