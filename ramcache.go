@@ -33,7 +33,6 @@ func CreateSpecifySizeMemoryCache(size int) Cache {
 	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: size}
 }
 
-/***************************************/
 /* Реализация методов интерфейса Cache */
 
 /* Put */
@@ -49,13 +48,15 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 		log.Debugf("Максимальный размер кеша: %d", mc.maxSize)
 		if mc.Size() >= mc.maxSize {
 
+			log.Infoln("Кеш полностью заполнен - передвигаем в drive-кеш")
+			return errors.New("кеш полностью заполнен - передвигаем в drive-кеш")
+
 			// Передвигать всё на диск	// TODO
 
-			log.Infoln("Кеш полностью заполнет, ничего не добавляем!")
-			return errors.New("кеш полностью заполнет, ничего не добавляем")
 		}
 	}
 
+	// Поместить в ram-кеш
 	mc.elements[key] = &MemoryElement{
 		value:     value,
 		frequency: 1, // Помещаем в кеш - значит используется в первый раз
@@ -73,13 +74,16 @@ func (mc *MemoryCache) Get(key string) interface{} {
 	mc.RLock()
 	defer mc.RUnlock()
 
-	// Если нет значения в кеше, то вернуть nil
+	// Если нет значения в ram-кеше, то проверить в drive-кеше. Если и там нет, то вернуть "nil".
 	el, ok := mc.elements[key]
 	if ok {
 		el.frequency++ // Частота использования
 		result = el.value
 	} else {
-		result = nil
+		// Проверить в drive-кеше
+		// TODO:
+
+		result = nil // Нигде нет
 	}
 
 	return result
@@ -131,6 +135,6 @@ func (mc *MemoryCache) IsExist(key string) bool {
 /* Size */
 func (mc *MemoryCache) Size() int {
 	result := len(mc.elements)
-	log.Debugf("Количество элементов в кеше: %d", result)
+	log.Debugf("Количество элементов в ram-кеше: %d", result)
 	return result
 }
