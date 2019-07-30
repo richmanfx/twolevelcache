@@ -19,7 +19,7 @@ type MemoryCache struct {
 type MemoryElement struct {
 	value     interface{} // Кешируемое значение
 	frequency int         // Частота использования элемента
-	// (может использовать TreeMap???
+	// может использовать TreeMap???
 	// import "github.com/golang-collections/tree/treemap"
 }
 
@@ -125,8 +125,6 @@ func (mc *MemoryCache) IsExist(key string) bool {
 	_, ok := mc.elements[key]
 	if ok {
 		result = true
-	} else {
-		result = false
 	}
 
 	return result

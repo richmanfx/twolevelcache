@@ -21,20 +21,20 @@ type SimpleStructure struct {
 func main() {
 
 	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
-	SetLog(log.InfoLevel)
+	SetLog(log.DebugLevel)
 
 	// Сгенерировать фейковые данные
-	dataAmount := 100                                    // Количество данных
+	dataAmount := 10                                     // Количество данных
 	cachedData := make([]SimpleStructure, 0, dataAmount) // Слайс для данных
 	dataFill(&cachedData)                                // Заполнение данными
 	log.Debugf("Данные: %+v", cachedData)
 
 	// Инициализировать drive-кеш заданного размера
-	cacheSize := 10
+	cacheSize := 1000
 	driveCache := CreateSpecifySizeDriveCache(cacheSize)
 
 	// Запросить рандомные данные заданное количество раз с использование drive-кеша
-	requestAmount := 10                       // Количество запросов
+	requestAmount := 20                       // Количество запросов
 	rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
 	graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
 

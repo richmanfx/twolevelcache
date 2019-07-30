@@ -115,13 +115,13 @@ func (dc *DriveCache) Del(key string) error {
 func (dc *DriveCache) IsExist(key string) bool {
 	var result bool
 
-	//_, ok := dc.elements[key]
-	//if ok {
-	//	result = true
-	//} else {
-	//	result = false
-	//}
-	//
+	for _, fileName := range dc.fileNames {
+		if key == fileName {
+			result = true
+			log.Debugf("Элемент '%s' уже находится в drive-кеше", key)
+		}
+	}
+
 	return result
 }
 
