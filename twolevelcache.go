@@ -31,11 +31,11 @@ func main() {
 	log.Debugf("Данные: %+v", cachedData)
 
 	// Инициализировать drive-кеш заданного размера
-	cacheSize := 1000
+	cacheSize := 100
 	driveCache := CreateSpecifySizeDriveCache(cacheSize)
 
 	// Запросить рандомные данные заданное количество раз с использование drive-кеша
-	requestAmount := 20                       // Количество запросов
+	requestAmount := 200                      // Количество запросов
 	rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
 	graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
 
