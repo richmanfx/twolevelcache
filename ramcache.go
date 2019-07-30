@@ -19,17 +19,10 @@ type MemoryCache struct {
 type MemoryElement struct {
 	Value     interface{} // Кешируемое значение
 	Frequency int         // Частота использования элемента
-	// может использовать TreeMap???
-	// import "github.com/golang-collections/tree/treemap"
-}
-
-/* Создать новый кеш в памяти без ограничения размера */
-func CreateMemoryCache() Cache {
-	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: -1}
 }
 
 /* Создать новый кеш в памяти заданного размера */
-func CreateSpecifySizeMemoryCache(size int) Cache {
+func CreateSpecifySizeMemoryCache(size int) *MemoryCache {
 	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: size}
 }
 
@@ -46,6 +39,7 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 	if mc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
 		log.Debugf("Количество элементов в кеше: %d", mc.Size())
 		log.Debugf("Максимальный размер кеша: %d", mc.maxSize)
+
 		if mc.Size() >= mc.maxSize {
 
 			log.Infoln("Кеш полностью заполнен - передвигаем в drive-кеш")

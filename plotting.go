@@ -24,7 +24,7 @@ func dataPlotting(data []int64, cacheSize int, dataAmount int, requestAmount int
 		"Задержка получения данных.\nРазмер кеша: %d, количество данных: %d, количество запросов: %d",
 		cacheSize, dataAmount, requestAmount)
 	plt.X.Label.Text = "Порядковый номер случайного запроса"
-	plt.Y.Label.Text = "Задержка"
+	plt.Y.Label.Text = "Задержка, нс"
 
 	plt.Add(plotter.NewGrid()) // Сетка
 

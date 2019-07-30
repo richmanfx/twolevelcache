@@ -4,10 +4,12 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 )
 
 const (
@@ -16,12 +18,12 @@ const (
 
 /* Контейнер */
 type DriveCache struct {
-	fileNames []string // Имена файла кеша
-	maxSize   int      // Максимальный размер кеша
+	fileNames []*string // Имена файла кеша
+	maxSize   int       // Максимальный размер кеша
 }
 
 /* Создать новый дисковый кеш заданного размера */
-func CreateSpecifySizeDriveCache(size int) Cache {
+func CreateSpecifySizeDriveCache(size int) *DriveCache {
 
 	// Создать директорию для кеш-файлов, если её нет
 	makeDirectory(CacheDir)
@@ -29,7 +31,7 @@ func CreateSpecifySizeDriveCache(size int) Cache {
 	// Очистить drive-кеш
 	clearDriveCache(CacheDir)
 
-	return &DriveCache{fileNames: make([]string, 0), maxSize: size}
+	return &DriveCache{fileNames: make([]*string, 0), maxSize: size}
 }
 
 /* Создать директорию, если её нет */
@@ -52,13 +54,13 @@ func clearDriveCache(dirName string) {
 	}
 
 	fileNumber := 0
-	for i, d := range dir {
+	for _, d := range dir {
 		err := os.RemoveAll(path.Join([]string{CacheDir, d.Name()}...))
 		if err != nil {
-			log.Errorf("Не удалось удалить файлы из директори '%s': %s", dirName, err)
+			log.Errorf("Не удалось удалить файлы из директории '%s': %s", dirName, err)
 			panic(err)
 		}
-		fileNumber += i
+		fileNumber++
 	}
 	log.Infof("Удалено %d кеш-файлов в директории %s", fileNumber, dirName)
 
@@ -75,7 +77,7 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 		log.Debugf("Максимальный размер drive-кеша: %d", dc.maxSize)
 
 		if dc.Size() >= dc.maxSize {
-			log.Infoln("Кеш полностью заполнен - удаляем значение с наименьшей частотой использования!")
+			log.Debugln("Кеш полностью заполнен - удаляем значение с наименьшей частотой использования!")
 			err := dc.LowFrequencyValueDelete()
 			if err != nil {
 				log.Errorf("Ошибка удаления низкочастотного значения: %s", err)
@@ -97,14 +99,24 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 		panic(err)
 	}
 
-	// Успешно сериализовали
-	dc.fileNames = append(dc.fileNames, keyFileName)
+	// Добавить запись если такой ещё нет
+	elementExist := false
+	for _, fileName := range dc.fileNames {
+
+		if *fileName == keyFileName {
+			elementExist = true
+			break
+		}
+	}
+	if !elementExist {
+		dc.fileNames = append(dc.fileNames, &keyFileName)
+	}
+
 	return nil
 }
 
 /* Get */
-func (dc *DriveCache) Get(key string) interface{} {
-	var result interface{}
+func (dc *DriveCache) Get(key string) *MemoryElement {
 
 	element, err := gobDecode(key)
 	if err == nil {
@@ -121,19 +133,48 @@ func (dc *DriveCache) Get(key string) interface{} {
 		}
 		log.Debugln("Кеш удачно обновлён")
 
-		result = element.Value
+		return element
 	} else {
 		log.Errorf("Ошибка десериализации файла: %s", err)
 		panic(err)
 	}
 
-	return result
 }
 
 /* Del */
-func (dc *DriveCache) Del(key string) error {
+func (dc *DriveCache) Del(keyFileName *string) error {
 	var result error
+
+	// Удалить файл
+	err := os.Remove(CacheDir + "/" + *keyFileName)
+	if err != nil {
+		log.Errorf("Не удалось удалить файл '%s' из директории '%s': %s", *keyFileName, CacheDir, err)
+		result = errors.New(
+			fmt.Sprintf("ошибка удаления файла '%s' из директории '%s': %s", *keyFileName, CacheDir, err))
+	}
+	log.Debugf("Файл '%s' удалён", *keyFileName)
+
+	// Удалить из контейнера
+	dc.fileNames = dc.remove(dc.fileNames, keyFileName)
+	log.Debugf("Запись '%s' из контейнера удалена", *keyFileName)
+
 	return result
+}
+
+/* Удалить ключ-имя_файла из массива ссылок  */
+func (dc *DriveCache) remove(fileNames []*string, keyFileName *string) []*string {
+
+	for i, fileName := range fileNames {
+		if *fileName == *keyFileName {
+			copy(fileNames[i:], fileNames[i+1:])
+
+			// Хвост очистить
+			fileNames[len(fileNames)-1] = nil
+			fileNames = fileNames[:len(fileNames)-1]
+			break
+		}
+	}
+	return fileNames
 }
 
 /* IsExist */
@@ -141,7 +182,7 @@ func (dc *DriveCache) IsExist(key string) bool {
 	var result bool
 
 	for _, fileName := range dc.fileNames {
-		if key == fileName {
+		if &key == fileName {
 			result = true
 			log.Debugf("Элемент '%s' уже находится в drive-кеше", key)
 		}
@@ -168,11 +209,45 @@ func (dc *DriveCache) Update(fileName string, element interface{}) error {
 	return nil
 }
 
+/* Удалить из drive-кеша значение с наименьшей частотой использования */
 func (dc *DriveCache) LowFrequencyValueDelete() error {
 
-	// Найти самый редкий	//TODO
+	// Массив структур с именами файлов и соответствующими частотами
+	type frequencyStruct struct {
+		fileName  string
+		frequency int
+	}
+	var frequencyArray []frequencyStruct
+
+	// Считать из drive-кеша
+	log.Debugf("До удаления ===> dc.fileNames: %v", dc.fileNames)
+	for i, fileName := range dc.fileNames {
+		log.Debugf("Имя в dc.fileNames До удаления ===> %d: %v", i, *fileName)
+	}
+
+	for _, fileName := range dc.fileNames {
+		element := dc.Get(*fileName)
+		log.Debugf("В методе LowFrequencyValueDelete получен элемент: %v", element)
+		frequencyArray = append(frequencyArray, frequencyStruct{*fileName, element.Frequency})
+	}
+
+	log.Debugf("структура 'имя_файла:частота': %v", frequencyArray)
+
+	// Отсортировать
+	sort.SliceStable(frequencyArray, func(i, j int) bool {
+		return frequencyArray[i].frequency < frequencyArray[j].frequency
+	})
+
+	log.Debugf("Минимальная частота: %v", frequencyArray[0])
 
 	// Удалить по ключу
+	err := dc.Del(&frequencyArray[0].fileName)
+	if err != nil {
+		log.Errorf("Ошибка удаления элемента из drive-кеша: %s", err)
+		panic(err)
+	}
 
+	log.Debugf("После удаления ===> dc.fileNames: %v", len(dc.fileNames))
+	log.Debugf("Элемент '%s' удалён из drive-кеша", frequencyArray[0].fileName)
 	return nil
 }

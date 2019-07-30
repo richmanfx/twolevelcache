@@ -7,7 +7,7 @@ type Cache interface {
 	Put(key string, val interface{}) error
 
 	// Получить значение из кеша по ключу
-	Get(key string) interface{}
+	Get(key string) *MemoryElement
 
 	// Удалить значение из кеша по ключу
 	Del(key string) error
