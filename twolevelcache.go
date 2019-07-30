@@ -21,7 +21,8 @@ type SimpleStructure struct {
 func main() {
 
 	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
-	SetLog(log.DebugLevel)
+	//SetLog(log.DebugLevel)
+	SetLog(log.InfoLevel)
 
 	// Сгенерировать фейковые данные
 	dataAmount := 10                                     // Количество данных

@@ -17,8 +17,8 @@ type MemoryCache struct {
 
 /* Кешируемый элемент */
 type MemoryElement struct {
-	value     interface{} // Кешируемое значение
-	frequency int         // Частота использования элемента
+	Value     interface{} // Кешируемое значение
+	Frequency int         // Частота использования элемента
 	// может использовать TreeMap???
 	// import "github.com/golang-collections/tree/treemap"
 }
@@ -58,8 +58,8 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 
 	// Поместить в ram-кеш
 	mc.elements[key] = &MemoryElement{
-		value:     value,
-		frequency: 1, // Помещаем в кеш - значит используется в первый раз
+		Value:     value,
+		Frequency: 1, // Помещаем в кеш - значит используется в первый раз
 	}
 
 	return nil
@@ -75,10 +75,10 @@ func (mc *MemoryCache) Get(key string) interface{} {
 	defer mc.RUnlock()
 
 	// Если нет значения в ram-кеше, то проверить в drive-кеше. Если и там нет, то вернуть "nil".
-	el, ok := mc.elements[key]
+	element, ok := mc.elements[key]
 	if ok {
-		el.frequency++ // Частота использования
-		result = el.value
+		element.Frequency++ // Частота использования
+		result = element.Value
 	} else {
 		// Проверить в drive-кеше
 		// TODO:

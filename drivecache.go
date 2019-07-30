@@ -3,7 +3,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os"
@@ -17,12 +16,6 @@ const (
 type DriveCache struct {
 	fileNames []string // Имена файла кеша
 	maxSize   int      // Максимальный размер кеша
-}
-
-/* Кешируемый элемент */
-type DriveElement struct {
-	Value     interface{} // Кешируемое значение
-	Frequency int         // Частота использования элемента
 }
 
 /* Создать новый дисковый кеш заданного размера */
@@ -65,33 +58,17 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 		}
 	}
 
-	// Поместить кешируемый элемент в drive-кеш
-	element := &DriveElement{
+	// Кешируемый элемент
+	element := &MemoryElement{
 		Value:     value,
 		Frequency: 1, // Помещаем в кеш - значит используется в первый раз
 	}
 
-	// Сериалиазовать елемент в файл
-	gob.Register(SimpleStructure{}) // Регистрация типа
-
-	fullPath := CacheDir + "/" + keyFileName
-	file, err := os.Create(fullPath)
+	// Сериалиазовать элемент в файл
+	err := gobEncode(keyFileName, element)
 	if err != nil {
-		log.Errorf("Ошибка создания файла кеширования '%s': %s", fullPath, err)
-		return errors.New("ошибка создания файла кеширования")
-	}
-
-	encoder := gob.NewEncoder(file)
-
-	err = encoder.Encode(element)
-	if err != nil {
-		log.Errorf("Ошибка кодирования: %s", err)
-		return errors.New("ошибка 'mob' кодирования")
-	}
-	err = file.Close()
-	if err != nil {
-		log.Errorf("Ошибка закрытия файла кеширования '%s': %s", fullPath, err)
-		return errors.New("ошибка закрытия файла кеширования")
+		log.Errorf("Ошибка сериализации файла: %s", err)
+		panic(err)
 	}
 
 	// Успешно сериализовали
@@ -102,6 +79,17 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 /* Get */
 func (dc *DriveCache) Get(key string) interface{} {
 	var result interface{}
+
+	element, err := gobDecode(key)
+	if err == nil {
+		log.Debugf("Получен из drive-кеша элемент '%v'", element)
+		element.Frequency++ // Частота использования
+		result = element.Value
+	} else {
+		log.Errorf("Ошибка десериализации файла: %s", err)
+		panic(err)
+	}
+
 	return result
 }
 
