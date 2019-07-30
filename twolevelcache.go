@@ -5,6 +5,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bxcodec/faker"
 	"github.com/mitchellh/hashstructure"
+	"math/rand"
 	. "os"
 	"time"
 )
@@ -32,25 +33,25 @@ func main() {
 	cacheSize := 10
 	driveCache := CreateSpecifySizeDriveCache(cacheSize)
 
-	// Закешировать значение
-	data := cachedData[0]
-	hash := getHash(data)
-	log.Infof("Хеш: %+v", hash)
-	err := driveCache.Put(hash, data)
-	if err != nil {
-		log.Infof("Ошибка добавления в кеш: %s", err)
-	}
-	log.Infof("Кеш: %+v", driveCache)
+	// Запросить рандомные данные заданное количество раз с использование drive-кеша
+	requestAmount := 10                       // Количество запросов
+	rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
+	graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
 
-	// Закешировать значение
-	data = cachedData[0]
-	hash = getHash(data)
-	log.Infof("Хеш: %+v", hash)
-	err = driveCache.Put(hash, data)
-	if err != nil {
-		log.Infof("Ошибка добавления в кеш: %s", err)
+	for i := 0; i < requestAmount; i++ {
+
+		// Случайные данные
+		randomIndex := rand.Int() % len(cachedData)
+		data := cachedData[randomIndex]
+
+		// Получить данные, засечь время получения
+		startTime := time.Now().UnixNano()
+		findings := getData(driveCache, data)
+		finishTime := time.Now().UnixNano()
+		receiptTime := finishTime - startTime
+		log.Infof("Полученные данные: %v за время(наносекунды): '%v'", findings, receiptTime)
+		graphicalAnalysisData = append(graphicalAnalysisData, receiptTime) // Добавить для графического анализа
 	}
-	log.Infof("Кеш: %+v", driveCache)
 
 	//// Инициализировать ram-кеш заданного размера
 	//cacheSize := 95

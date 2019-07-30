@@ -4,9 +4,9 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os"
-	"sync"
 )
 
 const (
@@ -15,9 +15,8 @@ const (
 
 /* Контейнер */
 type DriveCache struct {
-	sync.RWMutex                          // Защитный мьютекс для потокобезопасности map
-	elements     map[string]*DriveElement // Кешируемые элементы
-	maxSize      int                      // Максимальный размер кеша
+	fileNames []string // Имена файла кеша
+	maxSize   int      // Максимальный размер кеша
 }
 
 /* Кешируемый элемент */
@@ -32,7 +31,7 @@ func CreateSpecifySizeDriveCache(size int) Cache {
 	// Создать директорию для кеш-файлов, если её нет
 	makeDirectory(CacheDir)
 
-	return &DriveCache{elements: make(map[string]*DriveElement), maxSize: size}
+	return &DriveCache{fileNames: make([]string, 0), maxSize: size}
 }
 
 /* Создать директорию, если её нет */
@@ -49,54 +48,54 @@ func makeDirectory(dirName string) {
 /* Реализация методов интерфейса Cache */
 
 /* Put */
-func (dc *DriveCache) Put(key string, value interface{}) error {
-
-	// Блокировать на время записи
-	dc.Lock()
-	defer dc.Unlock()
+func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 
 	// Проверить не заполнен ли кеш полностью
 	if dc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
-		log.Debugf("Количество элементов в кеше: %d", dc.Size())
-		log.Debugf("Максимальный размер кеша: %d", dc.maxSize)
+		log.Debugf("Количество элементов в drive-кеше: %d", dc.Size())
+		log.Debugf("Максимальный размер drive-кеша: %d", dc.maxSize)
 
 		if dc.Size() >= dc.maxSize {
 			log.Infoln("Кеш полностью заполнен - удаляем значение с наименьшей частотой использования!")
 			err := dc.LowFrequencyValueDelete()
 			if err != nil {
 				log.Errorf("Ошибка удаления низкочастотного значения: %s", err)
+				return errors.New("ошибка удаления низкочастотного значения")
 			}
 		}
 	}
 
-	// Поместить в drive-кеш
-	dc.elements[key] = &DriveElement{
+	// Поместить кешируемый элемент в drive-кеш
+	element := &DriveElement{
 		Value:     value,
 		Frequency: 1, // Помещаем в кеш - значит используется в первый раз
 	}
 
-	// Сериалиазовать структуру в файл
-	gob.Register(SimpleStructure{}) // Регистрация типа SimpleStructure
-	fileName := key
-	serializeValue := dc.elements[key]
+	// Сериалиазовать елемент в файл
+	gob.Register(SimpleStructure{}) // Регистрация типа
 
-	fullPath := CacheDir + "/" + fileName
+	fullPath := CacheDir + "/" + keyFileName
 	file, err := os.Create(fullPath)
 	if err != nil {
 		log.Errorf("Ошибка создания файла кеширования '%s': %s", fullPath, err)
+		return errors.New("ошибка создания файла кеширования")
 	}
 
 	encoder := gob.NewEncoder(file)
 
-	err = encoder.Encode(serializeValue)
+	err = encoder.Encode(element)
 	if err != nil {
 		log.Errorf("Ошибка кодирования: %s", err)
+		return errors.New("ошибка 'mob' кодирования")
 	}
 	err = file.Close()
 	if err != nil {
 		log.Errorf("Ошибка закрытия файла кеширования '%s': %s", fullPath, err)
+		return errors.New("ошибка закрытия файла кеширования")
 	}
 
+	// Успешно сериализовали
+	dc.fileNames = append(dc.fileNames, keyFileName)
 	return nil
 }
 
@@ -115,12 +114,20 @@ func (dc *DriveCache) Del(key string) error {
 /* IsExist */
 func (dc *DriveCache) IsExist(key string) bool {
 	var result bool
+
+	//_, ok := dc.elements[key]
+	//if ok {
+	//	result = true
+	//} else {
+	//	result = false
+	//}
+	//
 	return result
 }
 
 /* Size */
 func (dc *DriveCache) Size() int {
-	result := len(dc.elements)
+	result := len(dc.fileNames)
 	log.Debugf("Количество элементов в drive-кеше: %d", result)
 	return result
 }
