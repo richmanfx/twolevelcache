@@ -22,14 +22,14 @@ type MemoryElement struct {
 }
 
 /* Создать новый кеш в памяти заданного размера */
-func CreateSpecifySizeMemoryCache(size int) *MemoryCache {
+func CreateSpecifySizeRamCache(size int) *MemoryCache {
 	return &MemoryCache{elements: make(map[string]*MemoryElement), maxSize: size}
 }
 
 /* Реализация методов интерфейса Cache */
 
 /* Put */
-func (mc *MemoryCache) Put(key string, value interface{}) error {
+func (mc *MemoryCache) Put(key string, value *MemoryElement) error {
 
 	// Блокировать на время записи
 	mc.Lock()
@@ -41,28 +41,27 @@ func (mc *MemoryCache) Put(key string, value interface{}) error {
 		log.Debugf("Максимальный размер кеша: %d", mc.maxSize)
 
 		if mc.Size() >= mc.maxSize {
+			log.Infoln("RAM-кеш полностью заполнен - рекешируем")
 
-			log.Infoln("Кеш полностью заполнен - передвигаем в drive-кеш")
-			return errors.New("кеш полностью заполнен - передвигаем в drive-кеш")
-
-			// Передвигать всё на диск	// TODO
+			// Рекеширование
+			err := reCaching()
+			if err != nil {
+				log.Infof("Ошибка рекеширования: %s", err)
+			}
 
 		}
 	}
 
 	// Поместить в ram-кеш
-	mc.elements[key] = &MemoryElement{
-		Value:     value,
-		Frequency: 1, // Помещаем в кеш - значит используется в первый раз
-	}
+	mc.elements[key] = value
 
 	return nil
 }
 
 /* Get */
-func (mc *MemoryCache) Get(key string) interface{} {
+func (mc *MemoryCache) Get(key string) *MemoryElement {
 
-	var result interface{}
+	var result *MemoryElement
 
 	// Блокировать запись на время чтения
 	mc.RLock()
@@ -72,10 +71,10 @@ func (mc *MemoryCache) Get(key string) interface{} {
 	element, ok := mc.elements[key]
 	if ok {
 		element.Frequency++ // Частота использования
-		result = element.Value
+		result = element
 	} else {
 		// Проверить в drive-кеше
-		// TODO:
+		// TODO: Нужно ли здесь проверять drive-кеш???
 
 		result = nil // Нигде нет
 	}

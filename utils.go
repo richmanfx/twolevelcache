@@ -6,23 +6,7 @@ import (
 	"github.com/bxcodec/faker"
 	"github.com/mitchellh/hashstructure"
 	. "os"
-	"time"
 )
-
-/* Получить данные, при возможности воспользоваться кешем */
-func getData(cache *DriveCache, data SimpleStructure) interface{} {
-
-	key := getHash(data)
-	if !cache.IsExist(key) {
-		// Эмуляция получения данных не из кеша - задержка
-		time.Sleep(500 * time.Microsecond)
-		err := cache.Put(key, data) // Занести в кеш
-		if err != nil {
-			log.Infof("Ошибка добавления в кеш: %s", err)
-		}
-	}
-	return cache.Get(key)
-}
 
 /* Вернуть хеш структуры */
 func getHash(structure SimpleStructure) string {

@@ -1,83 +1,81 @@
+/* Реализация двухуровневого кеша */
+
 package main
 
 import (
+	"errors"
 	log "github.com/Sirupsen/logrus"
-	"math/rand"
-	"time"
 )
 
-/* Простая структура */
-type SimpleStructure struct {
-	Id     int
-	Weight float32
-	Name   string `faker:"first_name"`
-	Player bool
+type TwoLevelCache struct {
+	ramCache          *MemoryCache
+	driveCache        *DriveCache
+	minRamFrequency   int
+	minFrequency      int
+	badQueriesCounter int
 }
 
-func main() {
+/* Создать новый двухуровневый кеш */
+func CreateTwoLevelCache(ramCacheSize, driveCacheSize, minRamFrequency, minFrequency int) *TwoLevelCache {
 
-	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
-	//SetLog(log.DebugLevel)
-	SetLog(log.InfoLevel)
-
-	// Инициализировать drive-кеш заданного размера
-	cacheSize := 1001
-	driveCache := CreateSpecifySizeDriveCache(cacheSize)
-
-	// Сгенерировать фейковые данные
-	dataAmount := 1000                                   // Количество данных
-	cachedData := make([]SimpleStructure, 0, dataAmount) // Слайс для данных
-	dataFill(&cachedData)                                // Заполнение данными
-	log.Debugf("Данные: %+v", cachedData)
-
-	// Запросить рандомные данные заданное количество раз с использование drive-кеша
-	requestAmount := 5000                     // Количество запросов
-	rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
-	graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
-
-	for i := 0; i < requestAmount; i++ {
-
-		// Случайные данные
-		randomIndex := rand.Int() % len(cachedData)
-		data := cachedData[randomIndex]
-
-		// Получить данные, засечь время получения
-		startTime := time.Now().UnixNano()
-		findings := getData(driveCache, data)
-		finishTime := time.Now().UnixNano()
-		receiptTime := finishTime - startTime
-		log.Debugf("Полученные данные: %v за время(наносекунды): '%v'", findings, receiptTime)
-		graphicalAnalysisData = append(graphicalAnalysisData, receiptTime) // Добавить для графического анализа
+	return &TwoLevelCache{
+		ramCache:          CreateSpecifySizeRamCache(ramCacheSize),
+		driveCache:        CreateSpecifySizeDriveCache(driveCacheSize),
+		minRamFrequency:   minRamFrequency,
+		minFrequency:      minFrequency,
+		badQueriesCounter: 0, // Счётчик количества запросов данных, которых не было в кеше
 	}
 
-	// Вывести график задержек в файл
-	dataPlotting(graphicalAnalysisData, cacheSize, dataAmount, requestAmount)
+}
 
-	//// Инициализировать ram-кеш заданного размера
-	//cacheSize := 95
-	//driveCache := CreateSpecifySizeMemoryCache(cacheSize)
-	//
-	//// Запросить рандомные данные заданное количество раз с использование кеша
-	//requestAmount := 1000                     // Количество запросов
-	//rand.Seed(time.Now().Unix())              // Инициализация псевдогенератора временем
-	//graphicalAnalysisData := make([]int64, 0) // Для сбора данных для графического анализа
-	//
-	//for i := 0; i < requestAmount; i++ {
-	//
-	//	// Случайные данные
-	//	randomIndex := rand.Int() % len(cachedData)
-	//	data := cachedData[randomIndex]
-	//
-	//	// Получить данные, засечь время получения
-	//	startTime := time.Now().UnixNano()
-	//	findings := getData(driveCache, data)
-	//	finishTime := time.Now().UnixNano()
-	//	receiptTime := finishTime - startTime
-	//	log.Infof("Полученные данные: %v за время(наносекунды): '%v'", findings, receiptTime)
-	//	graphicalAnalysisData = append(graphicalAnalysisData, receiptTime) // Добавить для графического анализа
-	//}
-	//
-	//// Вывести график задержек в файл
-	//dataPlotting(graphicalAnalysisData, cacheSize, dataAmount, requestAmount)
+/* Получить данные из кеша */
+func (tlc *TwoLevelCache) Get(data SimpleStructure) *MemoryElement {
 
+	var result *MemoryElement
+	key := getHash(data)
+
+	// Поиск в RAM-кеше
+	inRamExist := tlc.ramCache.IsExist(key)
+	if inRamExist {
+		// Читать из RAM-кеша
+		result = tlc.ramCache.Get(key)
+	} else {
+		// Поиск в Drive-кеше
+		inDriveExist := tlc.driveCache.IsExist(key)
+		if inDriveExist {
+			// Читать из DRIVE-кеша
+			result = tlc.driveCache.Get(key)
+		} else {
+			// В кеше нет запрашиваемых данных
+			tlc.badQueriesCounter++ // Увеличить счётчик количества запросов данных, которых не было в кеше
+			result = nil
+		}
+	}
+
+	// Рекеширование
+	// TODO: В горутине запустить?
+	if tlc.badQueriesCounter >= recacheRequestsNumber { // Когда данных не нашлось более заданного количества раз
+		err := reCaching()
+		if err != nil {
+			log.Infof("Ошибка рекеширования: %s", err)
+		}
+	}
+
+	// Выдать данные
+	return result
+}
+
+/* Внести данные в кеш */
+func (tlc *TwoLevelCache) Put(data SimpleStructure) error {
+	element := &MemoryElement{Value: data, Frequency: 1} // Не было в кеше - значит используется в первый раз
+	key := getHash(data)
+
+	// Внести в кеш - вносим только в RAM-часть
+	err := tlc.ramCache.Put(key, element)
+	if err != nil {
+		log.Infof("Ошибка помещения в RAM-кеш: %s", err)
+		return errors.New("ошибка помещения в RAM-кеш")
+	}
+
+	return nil
 }

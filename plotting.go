@@ -21,7 +21,7 @@ func dataPlotting(data []int64, cacheSize int, dataAmount int, requestAmount int
 	}
 
 	plt.Title.Text = fmt.Sprintf(
-		"Задержка получения данных.\nРазмер кеша: %d, количество данных: %d, количество запросов: %d",
+		"Задержка получения данных\nРазмер кеша: %d, количество данных: %d, количество запросов: %d",
 		cacheSize, dataAmount, requestAmount)
 	plt.X.Label.Text = "Порядковый номер случайного запроса"
 	plt.Y.Label.Text = "Задержка, нс"
@@ -33,8 +33,8 @@ func dataPlotting(data []int64, cacheSize int, dataAmount int, requestAmount int
 		panic(err)
 	}
 
-	// Записать график в PNG файл
-	if err := plt.Save(18*vg.Inch, 10*vg.Inch, "request_delay.jpg"); err != nil { // TODO: имя файла и размер - в конфиг
+	// Записать результаты в графический файл
+	if err := plt.Save(18*vg.Inch, 10*vg.Inch, graphResultFileName); err != nil {
 		panic(err)
 	}
 }
