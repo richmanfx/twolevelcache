@@ -15,11 +15,11 @@ type SimpleStructure struct {
 }
 
 const (
-	ramCacheSize    = 20  // Размер RAM-части кеша
+	ramCacheSize    = 40  // Размер RAM-части кеша
 	driveCacheSize  = 40  // Размер DRIVE-части кеша
-	minRamFrequency = 5   // Минимальная частота нахождения элемента в RAM-части кеша
-	minFrequency    = 3   // Минимальная частота нахождения элемента кеше (должна быть меньше, чем в RAM-части)
-	dataNumber      = 50  // Количество данных
+	minRamFrequency = 7   // Минимальная частота нахождения элемента в RAM-части кеша
+	minFrequency    = 5   // Минимальная частота нахождения элемента кеше
+	dataNumber      = 30  // Количество данных
 	requestNumber   = 300 // Количество запросов
 
 	fromAfarDelay       = 500                  // Задержка получения данных "издалека" когда нет данных в кеше, в мкс
@@ -28,7 +28,7 @@ const (
 
 	// Количество нерезультативных запросов в кеш, после которого запускать рекеширование
 	//recacheRequestsNumber = ramCacheSize / 2
-	recacheRequestsNumber = 50
+	recacheRequestsNumber = 25
 )
 
 func main() {

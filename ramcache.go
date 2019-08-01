@@ -87,10 +87,6 @@ func (mc *MemoryCache) Del(key string) error {
 
 	var result error
 
-	// Блокировать на время записи
-	//mc.Lock()
-	//defer mc.Unlock()
-
 	_, ok := mc.elements[key]
 	if !ok {
 		result = errors.New("удаление значения: ключ не существует")
