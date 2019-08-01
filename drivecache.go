@@ -221,9 +221,9 @@ func (dc *DriveCache) LowFrequencyValueDelete() error {
 
 	// Считать из drive-кеша
 	log.Debugf("До удаления ===> dc.fileNames: %v", dc.fileNames)
-	for i, fileName := range dc.fileNames {
-		log.Debugf("Имя в dc.fileNames До удаления ===> %d: %v", i, *fileName)
-	}
+	//for i, fileName := range dc.fileNames {
+	//	log.Debugf("Имя в dc.fileNames До удаления ===> %d: %v", i, *fileName)
+	//}
 
 	for _, fileName := range dc.fileNames {
 		element := dc.Get(*fileName)

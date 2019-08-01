@@ -55,7 +55,7 @@ func (tlc *TwoLevelCache) Get(data SimpleStructure) *MemoryElement {
 	// Рекеширование
 	// TODO: В горутине запустить?
 	if tlc.badQueriesCounter >= recacheRequestsNumber { // Когда данных не нашлось более заданного количества раз
-		err := reCaching()
+		err := reCaching(tlc.ramCache)
 		if err != nil {
 			log.Infof("Ошибка рекеширования: %s", err)
 		}

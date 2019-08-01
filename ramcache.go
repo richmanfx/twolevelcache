@@ -44,7 +44,7 @@ func (mc *MemoryCache) Put(key string, value *MemoryElement) error {
 			log.Infoln("RAM-кеш полностью заполнен - рекешируем")
 
 			// Рекеширование
-			err := reCaching()
+			err := reCaching(mc)
 			if err != nil {
 				log.Infof("Ошибка рекеширования: %s", err)
 			}
@@ -88,8 +88,8 @@ func (mc *MemoryCache) Del(key string) error {
 	var result error
 
 	// Блокировать на время записи
-	mc.Lock()
-	defer mc.Unlock()
+	//mc.Lock()
+	//defer mc.Unlock()
 
 	_, ok := mc.elements[key]
 	if !ok {
