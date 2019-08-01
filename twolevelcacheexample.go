@@ -15,18 +15,20 @@ type SimpleStructure struct {
 }
 
 const (
-	ramCacheSize    = 100  // Размер RAM-части кеша
-	driveCacheSize  = 200  // Размер DRIVE-части кеша
-	minRamFrequency = 10   // Минимальная частота нахождения элемента в RAM-части кеша
-	minFrequency    = 20   // Минимальная частота нахождения элемента кеше
-	dataNumber      = 50   // Количество данных
-	requestNumber   = 1000 // Количество запросов
+	ramCacheSize    = 20  // Размер RAM-части кеша
+	driveCacheSize  = 40  // Размер DRIVE-части кеша
+	minRamFrequency = 5   // Минимальная частота нахождения элемента в RAM-части кеша
+	minFrequency    = 3   // Минимальная частота нахождения элемента кеше (должна быть меньше, чем в RAM-части)
+	dataNumber      = 50  // Количество данных
+	requestNumber   = 300 // Количество запросов
 
-	fromAfarDelay       = 1000                 // Задержка получения данных "издалека" когда нет данных в кеше, в мкс
+	fromAfarDelay       = 500                  // Задержка получения данных "издалека" когда нет данных в кеше, в мкс
 	graphResultFileName = "requests_delay.jpg" // Результаты в графическом виде
+	cacheDir            = "drive_cache"        // Директория для DRIVE-кеша
 
 	// Количество нерезультативных запросов в кеш, после которого запускать рекеширование
-	recacheRequestsNumber = ramCacheSize / 5
+	//recacheRequestsNumber = ramCacheSize / 2
+	recacheRequestsNumber = 50
 )
 
 func main() {

@@ -34,10 +34,27 @@ func reCaching(mc *MemoryCache) error {
 		}
 	}
 
-	//// Перенести из Drive-кеша в Ram-кеш если частота больше Минимальной частоте нахождения элемента в RAM-кеше
+	// Перенести из Drive-кеша в Ram-кеш если частота больше Минимальной частоты нахождения элемента в RAM-кеше
+	for _, key := range dc.getAllKeys() { // Пробежаться по DRIVE-кешу
 
-	// Получить все ключи из DRIVER-кеш
-	//dc.getAllKey()
+		element := dc.Get(*key)
+
+		if element.Frequency > minRamFrequency {
+			// Внести в RAM-кеш
+			err := mc.Put(*key, element)
+			if err != nil {
+				log.Errorf("Ошибка внесения в RAM-кеш при рекешинге : %s", err)
+				return errors.New("ошибка внесения в RAM-кеш при рекешинге")
+			}
+
+			// Удалить из DRIVE-кеша
+			err = dc.Del(key)
+			if err != nil {
+				log.Errorf("Ошибка удаления из DRIVE-кеша при рекешинге : %s", err)
+				return errors.New("ошибка удаления из DRIVE-кеша при рекешинге")
+			}
+		}
+	}
 
 	return nil
 }

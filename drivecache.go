@@ -12,10 +12,6 @@ import (
 	"sort"
 )
 
-const (
-	CacheDir = "drive_cache"
-)
-
 /* Контейнер */
 type DriveCache struct {
 	fileNames []*string // Имена файла кеша
@@ -26,43 +22,43 @@ type DriveCache struct {
 func CreateSpecifySizeDriveCache(size int) *DriveCache {
 
 	// Создать директорию для кеш-файлов, если её нет
-	makeDirectory(CacheDir)
+	makeDirectory()
 
 	// Очистить drive-кеш
-	clearDriveCache(CacheDir)
+	clearDriveCache()
 
 	return &DriveCache{fileNames: make([]*string, 0), maxSize: size}
 }
 
 /* Создать директорию, если её нет */
-func makeDirectory(dirName string) {
-	if _, err := os.Stat(dirName); os.IsNotExist(err) {
-		err = os.Mkdir(dirName, os.ModeDir|0755)
+func makeDirectory() {
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		err = os.Mkdir(cacheDir, os.ModeDir|0755)
 		if err != nil {
-			log.Errorf("Не удалось создать директорию '%s': %s", dirName, err)
+			log.Errorf("Не удалось создать директорию '%s': %s", cacheDir, err)
 			panic(err)
 		}
 	}
 }
 
 /* Очистить drive-кеш */
-func clearDriveCache(dirName string) {
-	dir, err := ioutil.ReadDir(dirName)
+func clearDriveCache() {
+	dir, err := ioutil.ReadDir(cacheDir)
 	if err != nil {
-		log.Errorf("Не удалось очистить директорию '%s': %s", dirName, err)
+		log.Errorf("Не удалось очистить директорию '%s': %s", cacheDir, err)
 		panic(err)
 	}
 
 	fileNumber := 0
 	for _, d := range dir {
-		err := os.RemoveAll(path.Join([]string{CacheDir, d.Name()}...))
+		err := os.RemoveAll(path.Join([]string{cacheDir, d.Name()}...))
 		if err != nil {
-			log.Errorf("Не удалось удалить файлы из директории '%s': %s", dirName, err)
+			log.Errorf("Не удалось удалить файлы из директории '%s': %s", cacheDir, err)
 			panic(err)
 		}
 		fileNumber++
 	}
-	log.Infof("Удалено %d кеш-файлов в директории %s", fileNumber, dirName)
+	log.Infof("Удалено %d кеш-файлов в директории %s", fileNumber, cacheDir)
 
 }
 
@@ -78,10 +74,12 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 
 		if dc.Size() >= dc.maxSize {
 			log.Debugln("Кеш полностью заполнен - удаляем значение с наименьшей частотой использования!")
-			err := dc.LowFrequencyValueDelete()
-			if err != nil {
-				log.Errorf("Ошибка удаления низкочастотного значения: %s", err)
-				return errors.New("ошибка удаления низкочастотного значения")
+			if dc.maxSize != 0 {
+				err := dc.LowFrequencyValueDelete()
+				if err != nil {
+					log.Errorf("Ошибка удаления низкочастотного значения: %s", err)
+					return errors.New("ошибка удаления низкочастотного значения")
+				}
 			}
 		}
 	}
@@ -122,7 +120,7 @@ func (dc *DriveCache) Get(key string) *MemoryElement {
 	if err == nil {
 		log.Debugf("Получен из drive-кеша элемент '%v'", element)
 
-		// Инкрементировать частота использования и обновить в кеше
+		// Инкрементировать частоту использования и обновить в кеше
 		log.Debugf("Частота до инкремента: %d", element.Frequency)
 		element.Frequency++
 		log.Debugf("Частота после инкремента: %d", element.Frequency)
@@ -146,11 +144,11 @@ func (dc *DriveCache) Del(keyFileName *string) error {
 	var result error
 
 	// Удалить файл
-	err := os.Remove(CacheDir + "/" + *keyFileName)
+	err := os.Remove(cacheDir + "/" + *keyFileName)
 	if err != nil {
-		log.Errorf("Не удалось удалить файл '%s' из директории '%s': %s", *keyFileName, CacheDir, err)
+		log.Errorf("Не удалось удалить файл '%s' из директории '%s': %s", *keyFileName, cacheDir, err)
 		result = errors.New(
-			fmt.Sprintf("ошибка удаления файла '%s' из директории '%s': %s", *keyFileName, CacheDir, err))
+			fmt.Sprintf("ошибка удаления файла '%s' из директории '%s': %s", *keyFileName, cacheDir, err))
 	}
 	log.Debugf("Файл '%s' удалён", *keyFileName)
 
@@ -180,11 +178,25 @@ func (dc *DriveCache) remove(fileNames []*string, keyFileName *string) []*string
 /* IsExist */
 func (dc *DriveCache) IsExist(key string) bool {
 	var result bool
+	dc.fileNames = nil // Старое не нужно - актуальные ключи с диска прочитаем
 
+	// Прочитать с диска имена файлов
+	dir, err := ioutil.ReadDir(cacheDir)
+	if err != nil {
+		log.Errorf("Не удалось прочитать директорию '%s': %s", cacheDir, err)
+		panic(err)
+	}
+	for _, keyFile := range dir {
+		fileName := keyFile.Name()
+		dc.fileNames = append(dc.fileNames, &fileName)
+	}
+
+	// Искать ключ
 	for _, fileName := range dc.fileNames {
-		if &key == fileName {
+		if key == *fileName {
 			result = true
-			log.Debugf("Элемент '%s' уже находится в drive-кеше", key)
+			log.Infof("Элемент '%s' уже находится в drive-кеше", key)
+			break
 		}
 	}
 
@@ -250,4 +262,10 @@ func (dc *DriveCache) LowFrequencyValueDelete() error {
 	log.Debugf("После удаления ===> dc.fileNames: %v", len(dc.fileNames))
 	log.Debugf("Элемент '%s' удалён из drive-кеша", frequencyArray[0].fileName)
 	return nil
+}
+
+/* Вернуть все ключи Driver-кеша */
+func (dc *DriveCache) getAllKeys() []*string {
+	log.Debugf("dc: %v", dc)
+	return dc.fileNames
 }

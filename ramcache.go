@@ -35,10 +35,10 @@ func (mc *MemoryCache) Put(key string, value *MemoryElement) error {
 	mc.Lock()
 	defer mc.Unlock()
 
-	// Проверить не заполнен ли кеш полностью
+	// Проверить не заполнен ли RAM-кеш полностью
 	if mc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
-		log.Debugf("Количество элементов в кеше: %d", mc.Size())
-		log.Debugf("Максимальный размер кеша: %d", mc.maxSize)
+		log.Debugf("Количество элементов в RAM-кеше: %d", mc.Size())
+		log.Debugf("Максимальный размер RAM-кеша: %d", mc.maxSize)
 
 		if mc.Size() >= mc.maxSize {
 			log.Infoln("RAM-кеш полностью заполнен - рекешируем")

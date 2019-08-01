@@ -44,6 +44,7 @@ func (tlc *TwoLevelCache) Get(data SimpleStructure) *MemoryElement {
 		inDriveExist := tlc.driveCache.IsExist(key)
 		if inDriveExist {
 			// Читать из DRIVE-кеша
+			log.Debugf("Есть в DRIVE-кеше - читаю")
 			result = tlc.driveCache.Get(key)
 		} else {
 			// В кеше нет запрашиваемых данных
@@ -54,7 +55,8 @@ func (tlc *TwoLevelCache) Get(data SimpleStructure) *MemoryElement {
 
 	// Рекеширование
 	// TODO: В горутине запустить?
-	if tlc.badQueriesCounter >= recacheRequestsNumber { // Когда данных не нашлось более заданного количества раз
+	if tlc.badQueriesCounter > recacheRequestsNumber { // Когда данных не нашлось более заданного количества раз
+		log.Infof("Данных не нашлось в кеше более '%d' раз - рекешируем", recacheRequestsNumber)
 		err := reCaching(tlc.ramCache)
 		if err != nil {
 			log.Infof("Ошибка рекеширования: %s", err)

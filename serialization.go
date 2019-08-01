@@ -12,7 +12,7 @@ func gobEncode(fileName string, data interface{}) error {
 
 	gob.Register(SimpleStructure{}) // Регистрация типа
 
-	fullPath := CacheDir + "/" + fileName
+	fullPath := cacheDir + "/" + fileName
 	file, err := os.Create(fullPath)
 	if err != nil {
 		log.Errorf("Ошибка создания файла кеширования '%s': %s", fullPath, err)
@@ -39,7 +39,7 @@ func gobEncode(fileName string, data interface{}) error {
 /* Десериализация из двоичного формата Go */
 func gobDecode(fileName string) (data *MemoryElement, err error) {
 
-	fullPath := CacheDir + "/" + fileName
+	fullPath := cacheDir + "/" + fileName
 	file, err := os.Open(fullPath)
 	if err != nil {
 		log.Errorf("Ошибка открытия файла кеширования '%s': %s", fullPath, err)
