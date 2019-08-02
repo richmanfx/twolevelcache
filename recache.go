@@ -5,11 +5,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+/* Рекеширование */
 func reCaching(mc *MemoryCache) error {
-
-	// Минимальная частота нахождения элемента в RAM-кеше:
-	//  - если меньше или равно, то переносить в Drive-кеш при рекешировании
-	//  - если больше, то переносить из Drive-кеша в Ram-кеш
 
 	dc := &DriveCache{fileNames: nil, maxSize: driveCacheSize}
 
@@ -34,7 +31,7 @@ func reCaching(mc *MemoryCache) error {
 		}
 	}
 
-	// Перенести из Drive-кеша в Ram-кеш если частота больше Минимальной частоты нахождения элемента в RAM-кеше
+	// Перенести из DRIVE-кеша в RAM-кеш если частота больше Минимальной частоты нахождения элемента в RAM-кеше
 	for _, key := range dc.getAllKeys() { // Пробежаться по DRIVE-кешу
 
 		element := dc.Get(*key)

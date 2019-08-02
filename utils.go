@@ -14,8 +14,7 @@ func getHash(structure SimpleStructure) string {
 	if err != nil {
 		log.Errorf("Ошибка хеширования: %s", err)
 	}
-	//return fmt.Sprintf("%d%d", hash, rand.Int())		// TODO:
-	return fmt.Sprintf("%d", hash) // TODO:
+	return fmt.Sprintf("%d", hash)
 }
 
 /* Заполнить слайс данными */
@@ -31,7 +30,7 @@ func dataFill(allCachedData *[]SimpleStructure) {
 }
 
 /* Выставить параметры логирования */
-func SetLog(debugLevel log.Level) {
+func setLog(debugLevel log.Level) {
 	log.SetOutput(Stdout)
 	customFormatter := new(log.TextFormatter)
 	customFormatter.TimestampFormat = "2006/01/02 15:04:05"

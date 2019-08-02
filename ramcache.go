@@ -52,7 +52,7 @@ func (mc *MemoryCache) Put(key string, value *MemoryElement) error {
 		}
 	}
 
-	// Поместить в ram-кеш
+	// Поместить в RAM-кеш
 	mc.elements[key] = value
 
 	return nil
@@ -67,16 +67,13 @@ func (mc *MemoryCache) Get(key string) *MemoryElement {
 	mc.RLock()
 	defer mc.RUnlock()
 
-	// Если нет значения в ram-кеше, то проверить в drive-кеше. Если и там нет, то вернуть "nil".
+	// Если нет значения в RAM-кеше, то вернуть "nil".
 	element, ok := mc.elements[key]
 	if ok {
 		element.Frequency++ // Частота использования
 		result = element
 	} else {
-		// Проверить в drive-кеше
-		// TODO: Нужно ли здесь проверять drive-кеш???
-
-		result = nil // Нигде нет
+		result = nil // Нет данных в RAM-кеше
 	}
 
 	return result
@@ -122,6 +119,6 @@ func (mc *MemoryCache) IsExist(key string) bool {
 /* Size */
 func (mc *MemoryCache) Size() int {
 	result := len(mc.elements)
-	log.Debugf("Количество элементов в ram-кеше: %d", result)
+	log.Debugf("Количество элементов в RAM-кеше: %d", result)
 	return result
 }

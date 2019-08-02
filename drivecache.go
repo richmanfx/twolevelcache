@@ -41,7 +41,7 @@ func makeDirectory() {
 	}
 }
 
-/* Очистить drive-кеш */
+/* Очистить DRIVE-кеш */
 func clearDriveCache() {
 	dir, err := ioutil.ReadDir(cacheDir)
 	if err != nil {
@@ -69,8 +69,8 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 
 	// Проверить не заполнен ли кеш полностью
 	if dc.maxSize != -1 { // "-1" - нет ограничения в размере кеша
-		log.Debugf("Количество элементов в drive-кеше: %d", dc.Size())
-		log.Debugf("Максимальный размер drive-кеша: %d", dc.maxSize)
+		log.Debugf("Количество элементов в DRIVE-кеше: %d", dc.Size())
+		log.Debugf("Максимальный размер DRIVE-кеша: %d", dc.maxSize)
 
 		if dc.Size() >= dc.maxSize {
 			log.Debugln("Кеш полностью заполнен - удаляем значение с наименьшей частотой использования!")
@@ -97,7 +97,7 @@ func (dc *DriveCache) Put(keyFileName string, value interface{}) error {
 		panic(err)
 	}
 
-	// Добавить запись если такой ещё нет
+	// Добавить запись, если такой ещё нет
 	elementExist := false
 	for _, fileName := range dc.fileNames {
 
@@ -118,7 +118,7 @@ func (dc *DriveCache) Get(key string) *MemoryElement {
 
 	element, err := gobDecode(key)
 	if err == nil {
-		log.Debugf("Получен из drive-кеша элемент '%v'", element)
+		log.Debugf("Получен из DRIVE-кеша элемент '%v'", element)
 
 		// Инкрементировать частоту использования и обновить в кеше
 		log.Debugf("Частота до инкремента: %d", element.Frequency)
@@ -195,7 +195,7 @@ func (dc *DriveCache) IsExist(key string) bool {
 	for _, fileName := range dc.fileNames {
 		if key == *fileName {
 			result = true
-			log.Infof("Элемент '%s' уже находится в drive-кеше", key)
+			log.Infof("Элемент '%s' уже находится в DRIVE-кеше", key)
 			break
 		}
 	}
@@ -206,7 +206,7 @@ func (dc *DriveCache) IsExist(key string) bool {
 /* Size */
 func (dc *DriveCache) Size() int {
 	result := len(dc.fileNames)
-	log.Debugf("Количество элементов в drive-кеше: %d", result)
+	log.Debugf("Количество элементов в DRIVE-кеше: %d", result)
 	return result
 }
 
@@ -215,13 +215,13 @@ func (dc *DriveCache) Update(fileName string, element interface{}) error {
 
 	err := gobEncode(fileName, element)
 	if err != nil {
-		log.Errorf("Ошибка сериализации файла при обновлении drive-кеша: %s", err)
+		log.Errorf("Ошибка сериализации файла при обновлении DRIVE-кеша: %s", err)
 		panic(err)
 	}
 	return nil
 }
 
-/* Удалить из drive-кеша значение с наименьшей частотой использования */
+/* Удалить из DRIVE-кеша значение с наименьшей частотой использования */
 func (dc *DriveCache) LowFrequencyValueDelete() error {
 
 	// Массив структур с именами файлов и соответствующими частотами
@@ -231,40 +231,33 @@ func (dc *DriveCache) LowFrequencyValueDelete() error {
 	}
 	var frequencyArray []frequencyStruct
 
-	// Считать из drive-кеша
-	log.Debugf("До удаления ===> dc.fileNames: %v", dc.fileNames)
-	//for i, fileName := range dc.fileNames {
-	//	log.Debugf("Имя в dc.fileNames До удаления ===> %d: %v", i, *fileName)
-	//}
-
+	// Считать из DRIVE-кеша
 	for _, fileName := range dc.fileNames {
 		element := dc.Get(*fileName)
 		log.Debugf("В методе LowFrequencyValueDelete получен элемент: %v", element)
 		frequencyArray = append(frequencyArray, frequencyStruct{*fileName, element.Frequency})
 	}
-
 	log.Debugf("структура 'имя_файла:частота': %v", frequencyArray)
 
 	// Отсортировать
 	sort.SliceStable(frequencyArray, func(i, j int) bool {
 		return frequencyArray[i].frequency < frequencyArray[j].frequency
 	})
-
 	log.Debugf("Минимальная частота: %v", frequencyArray[0])
 
 	// Удалить по ключу
 	err := dc.Del(&frequencyArray[0].fileName)
 	if err != nil {
-		log.Errorf("Ошибка удаления элемента из drive-кеша: %s", err)
+		log.Errorf("Ошибка удаления элемента из DRIVE-кеша: %s", err)
 		panic(err)
 	}
 
 	log.Debugf("После удаления ===> dc.fileNames: %v", len(dc.fileNames))
-	log.Debugf("Элемент '%s' удалён из drive-кеша", frequencyArray[0].fileName)
+	log.Debugf("Элемент '%s' удалён из DRIVE-кеша", frequencyArray[0].fileName)
 	return nil
 }
 
-/* Вернуть все ключи Driver-кеша */
+/* Вернуть все ключи DRIVE-кеша */
 func (dc *DriveCache) getAllKeys() []*string {
 	log.Debugf("dc: %v", dc)
 	return dc.fileNames

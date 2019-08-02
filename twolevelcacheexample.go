@@ -27,15 +27,14 @@ const (
 	cacheDir            = "drive_cache"        // Директория для DRIVE-кеша
 
 	// Количество нерезультативных запросов в кеш, после которого запускать рекеширование
-	//recacheRequestsNumber = ramCacheSize / 2
 	recacheRequestsNumber = 25
 )
 
 func main() {
 
 	// Выставить параметры логирования (DebugLevel, InfoLevel ...)
-	//SetLog(log.DebugLevel)
-	SetLog(log.InfoLevel)
+	//setLog(log.DebugLevel)
+	setLog(log.InfoLevel)
 
 	// Инициализировать кеш заданного размера
 	twoLevelCache := CreateTwoLevelCache(ramCacheSize, driveCacheSize, minRamFrequency, minFrequency)
@@ -84,6 +83,6 @@ func main() {
 	}
 
 	// Вывести график задержек в файл
-	dataPlotting(graphicalAnalysisData, driveCacheSize, dataNumber, requestNumber)
+	dataPlotting(graphicalAnalysisData, ramCacheSize, driveCacheSize, dataNumber, requestNumber)
 
 }

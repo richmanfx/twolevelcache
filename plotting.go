@@ -10,7 +10,7 @@ import (
 )
 
 /* Вывести график в файл */
-func dataPlotting(data []int64, cacheSize int, dataAmount int, requestAmount int) {
+func dataPlotting(data []int64, ramCacheSize, driveCacheSize, dataNumber, requestAmount int) {
 
 	log.Debugf("Число точек: %d", len(data))
 	log.Debugf("Данные: %v", data)
@@ -21,13 +21,16 @@ func dataPlotting(data []int64, cacheSize int, dataAmount int, requestAmount int
 	}
 
 	plt.Title.Text = fmt.Sprintf(
-		"Задержка получения данных\nРазмер кеша: %d, количество данных: %d, количество запросов: %d",
-		cacheSize, dataAmount, requestAmount)
+		"Задержка получения данных\n"+
+			"Размер RAM-кеша: %d, размер DRIVE-кеша: %d, количество данных: %d, количество запросов: %d",
+		ramCacheSize, driveCacheSize, dataNumber, requestAmount)
 	plt.X.Label.Text = "Порядковый номер случайного запроса"
 	plt.Y.Label.Text = "Задержка, нс"
 
-	plt.Add(plotter.NewGrid()) // Сетка
+	// Сетка
+	plt.Add(plotter.NewGrid())
 
+	// Добавить на график линию с точками из координат
 	err = plotutil.AddLinePoints(plt, "", getPoints(data))
 	if err != nil {
 		panic(err)
